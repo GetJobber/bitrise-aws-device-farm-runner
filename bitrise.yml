@@ -10,6 +10,7 @@ app:
   - DEVICE_FARM_PROJECT: $DEVICE_FARM_PROJECT
   - BILLING_METHOD: $BILLING_METHOD
   - LOCALE: $LOCALE
+  - EXTRA_DATA_PACKAGE_ARN: $EXTRA_DATA_PACKAGE_ARN
   - TEST_PACKAGE_NAME: $TEST_PACKAGE_NAME
   - TEST_TYPE: $TEST_TYPE
   - FILTER: $FILTER
@@ -33,6 +34,7 @@ workflows:
         - device_farm_project: $DEVICE_FARM_PROJECT
         - billing_method: $BILLING_METHOD
         - locale: $LOCALE
+        - extra_data_package_arn: $EXTRA_DATA_PACKAGE_ARN
         - test_package_name: $TEST_PACKAGE_NAME
         - test_type: $TEST_TYPE
         - filter: $FILTER

@@ -211,7 +211,7 @@ function device_farm_run {
     # Start run
     local run_params=(--project-arn="$device_farm_project")
     run_params+=(--device-pool-arn="$device_pool")
-    run_params+=(--configuration="{\"billingMethod\": \"${billing_method}\", \"locale\": \"${locale}\"}")
+    run_params+=(--configuration="{\"billingMethod\": \"${billing_method}\", \"locale\": \"${locale}\", \"extraDataPackageArn\": \"${extra_data_package_arn}\"}")
     run_params+=(--app-arn="$app_arn")
     run_params+=(--output=json)
 
@@ -324,6 +324,7 @@ echo_details "* test_type: $test_type"
 echo_details "* filter: $filter"
 echo_details "* test_spec: $test_spec"
 echo_details "* billing_method: $billing_method"
+echo_details "* extra_data_package_arn: $extra_data_package_arn"
 echo_details "* locale: $locale"
 echo_details "* platform: $platform"
 echo_details "* ipa_path: $ipa_path"

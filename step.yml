@@ -116,6 +116,12 @@ inputs:
           - "uk_UA"
           - "vi_VN"
       is_required: false
+  - extra_data_package_arn: ""
+    opts:
+      title: "Extra data package ARN"
+      summary: ""
+      description: "The ARN of the extra data for the run. The extra data is a .zip file that AWS Device Farm extracts to external data for Android or the app's sandbox for iOS."
+      is_required: false
   - test_package_name: ""
     opts:
       title: "Test Package Filename"
