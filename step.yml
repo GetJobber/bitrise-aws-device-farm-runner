@@ -174,8 +174,8 @@ inputs:
   - apk_path: "$BITRISE_SIGNED_APK_PATH"
     opts:
       title: "APK file path"
-      description: "Required for Android runs when apk_package_name is not provided."
-  - apk_package_name: ""
+      description: "Required for Android runs when apk_name is not provided."
+  - apk_name: ""
     opts:
       title: "APK Package Filename"
       summary: ""

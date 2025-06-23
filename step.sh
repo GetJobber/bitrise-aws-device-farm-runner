@@ -96,8 +96,8 @@ function validate_ios_inputs {
 }
 
 function validate_android_inputs {
-    if [[ -n "$apk_package_name" ]]; then
-        validate_required_input "apk_package_name" "${apk_package_name}"
+    if [[ -n "$apk_name" ]]; then
+        validate_required_input "apk_name" "${apk_name}"
     else
         validate_required_input "apk_path" "${apk_path}"
     fi
@@ -118,10 +118,10 @@ function get_test_package_arn {
 function get_apk_package_arn {
     # Get most recent Android APK ARN
     set +o errexit
-    validate_required_variable "apk_package_name" "${apk_package_name}"
-    apk_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${apk_package_name}' && type=='ANDROID_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
+    validate_required_variable "apk_name" "${apk_name}"
+    apk_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${apk_name}' && type=='ANDROID_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
     if [[ "$?" -ne 0 ]]; then
-        echo_fail "Unable to find an Android APK package named '${apk_package_name}' in your device farm project. Please make sure that apk_package_name corresponds to the basename (not the full path) of the APK package which should have been previously uploaded by the aws-file-deploy step. If the APK is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
+        echo_fail "Unable to find an Android APK package named '${apk_name}' in your device farm project. Please make sure that apk_name corresponds to the basename (not the full path) of the APK package which should have been previously uploaded by the aws-file-deploy step. If the APK is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
     fi
     set -o errexit
 }
@@ -340,7 +340,7 @@ function device_farm_run_ios {
 }
 
 function device_farm_run_android {
-    if [[ -n "$apk_package_name" ]]; then
+    if [[ -n "$apk_name" ]]; then
         device_farm_run android "$android_pool" "" ANDROID_APP "$apk_package_arn"
     else
         device_farm_run android "$android_pool" "$apk_path" ANDROID_APP ""
@@ -376,7 +376,7 @@ echo_details "* ipa_path: $ipa_path"
 echo_details "* ipa_package_name: $ipa_package_name"
 echo_details "* ios_pool: $ios_pool"
 echo_details "* apk_path: $apk_path"
-echo_details "* apk_package_name: $apk_package_name"
+echo_details "* apk_name: $apk_name"
 echo_details "* android_pool: $android_pool"
 echo_details "* run_name_prefix: $run_name_prefix"
 echo_details "* build_version: $build_version"
@@ -423,7 +423,7 @@ elif [ "$platform" == 'android' ]; then
     validate_android_inputs
     set -o nounset
     get_test_package_arn
-    if [[ -n "$apk_package_name" ]]; then
+    if [[ -n "$apk_name" ]]; then
         get_apk_package_arn
     fi
     device_farm_run_android
@@ -435,7 +435,7 @@ elif [ "$platform" == 'ios+android' ]; then
     if [[ -n "$ipa_package_name" ]]; then
         get_ipa_package_arn
     fi
-    if [[ -n "$apk_package_name" ]]; then
+    if [[ -n "$apk_name" ]]; then
         get_apk_package_arn
     fi
     device_farm_run_ios

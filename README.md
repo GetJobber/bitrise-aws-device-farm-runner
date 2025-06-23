@@ -32,8 +32,8 @@ Deploys app to device farm and starts a test run with a preconfigured test packa
 - `ios_pool` - Device Farm iOS Device Pool ARN. Required for iOS runs. ARNs can be obtained using the AWS CLI `devicefarm list-device-pools` command.
 
 ### Android-specific Inputs
-- `apk_path` - APK file path. Required for Android runs when `apk_package_name` is not provided. Default: `$BITRISE_SIGNED_APK_PATH`
-- `apk_package_name` - Filename of APK package to use for testing. This should be a filename (not a path) that matches the name of the APK bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step. The most recently uploaded package with this name will be used. If provided, this takes precedence over `apk_path`.
+- `apk_path` - APK file path. Required for Android runs when `apk_name` is not provided. Default: `$BITRISE_SIGNED_APK_PATH`
+- `apk_name` - Filename of APK package to use for testing. This should be a filename (not a path) that matches the name of the APK bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step. The most recently uploaded package with this name will be used. If provided, this takes precedence over `apk_path`.
 - `android_pool` - Device Farm Android Device Pool ARN. Required for Android runs. ARNs can be obtained using the AWS CLI `devicefarm list-device-pools` command.
 
 ## Outputs
@@ -52,7 +52,7 @@ This step supports two approaches for providing app packages (IPA/APK files):
 
 ### Package Name Approach (New)
 - Use `ipa_package_name` for iOS apps
-- Use `apk_package_name` for Android apps
+- Use `apk_name` for Android apps
 - The step will look up the most recently uploaded package with the specified name
 - No upload is performed, saving time and bandwidth
 - Requires packages to be previously uploaded using the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step
@@ -110,7 +110,7 @@ envs:
      1. An Amazon device farm project must be set up in the target region, and its ARN must be specified in the `device_farm_project` input
      1. If `platform` input is...
        1. ... set to `ios`, then `ios_pool` must be set to the ARN of an iOS device pool and either `ipa_path` or `ipa_package_name` must be set
-       1. ... set to `android`, then `android_pool` must be set to the ARN of an Android device pool and either `apk_path` or `apk_package_name` must be set
+       1. ... set to `android`, then `android_pool` must be set to the ARN of an Android device pool and either `apk_path` or `apk_name` must be set
        1. ... set to `ios+android`, then all of the above inputs must be set
   - see `step.yml` for more info on obtaining ARNs
 
