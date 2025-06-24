@@ -87,12 +87,20 @@ function validate_required_input_with_options {
 }
 
 function validate_ios_inputs {
-    validate_required_input "ipa_path" "${ipa_path}"
+    if [[ -n "$ipa_package_name" ]]; then
+        validate_required_input "ipa_package_name" "${ipa_package_name}"
+    else
+        validate_required_input "ipa_path" "${ipa_path}"
+    fi
     validate_required_input "ios_pool" "${ios_pool}"
 }
 
 function validate_android_inputs {
-    validate_required_input "apk_path" "${apk_path}"
+    if [[ -n "$apk_name" ]]; then
+        validate_required_input "apk_name" "${apk_name}"
+    else
+        validate_required_input "apk_path" "${apk_path}"
+    fi
     validate_required_input "android_pool" "${android_pool}"
 }
 
@@ -103,6 +111,28 @@ function get_test_package_arn {
     test_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${test_package_name}'] | max_by(@, &created).arn" --output=json | jq -r .)
     if [[ "$?" -ne 0 ]]; then
         echo_fail "Unable to find a test package named '${test_package_name}' in your device farm project. Please make sure that test_package_name corresponds to the basename (not the full path) of the test package which should have been previously uploaded by the aws-file-deploy step. If the test bundle is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
+    fi
+    set -o errexit
+}
+
+function get_apk_package_arn {
+    # Get most recent Android APK ARN
+    set +o errexit
+    validate_required_variable "apk_name" "${apk_name}"
+    apk_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${apk_name}' && type=='ANDROID_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
+    if [[ "$?" -ne 0 ]]; then
+        echo_fail "Unable to find an Android APK package named '${apk_name}' in your device farm project. Please make sure that apk_name corresponds to the basename (not the full path) of the APK package which should have been previously uploaded by the aws-file-deploy step. If the APK is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
+    fi
+    set -o errexit
+}
+
+function get_ipa_package_arn {
+    # Get most recent iOS IPA ARN
+    set +o errexit
+    validate_required_variable "ipa_package_name" "${ipa_package_name}"
+    ipa_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${ipa_package_name}' && type=='IOS_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
+    if [[ "$?" -ne 0 ]]; then
+        echo_fail "Unable to find an iOS IPA package named '${ipa_package_name}' in your device farm project. Please make sure that ipa_package_name corresponds to the basename (not the full path) of the IPA package which should have been previously uploaded by the aws-file-deploy step. If the IPA is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
     fi
     set -o errexit
 }
@@ -155,6 +185,7 @@ function device_farm_run {
     local device_pool="$2"
     local app_package_path="$3"
     local upload_type="$4"
+    local app_package_arn="$5"
 
     set +o errexit
     set +o nounset
@@ -163,13 +194,11 @@ function device_farm_run {
 
     echo_details "* run_platform: $run_platform"
     echo_details "* device_pool: $device_pool"
-    echo_details "* app_package_path: $app_package_path"
     echo_details "* upload_type: $upload_type"
     echo_details "* test_package_arn: $test_package_arn"
 
     validate_required_variable "run_platform" "${run_platform}"
     validate_required_variable "device_pool" "${device_pool}"
-    validate_required_variable "app_package_path" "${app_package_path}"
     validate_required_variable "upload_type" "${upload_type}"
     validate_required_variable "test_package_arn" "${test_package_arn}"
 
@@ -177,36 +206,45 @@ function device_farm_run {
     set -o nounset
     set -o pipefail
 
-    # Intialize upload
-    local app_filename
-    app_filename=$(set -eu; basename "$app_package_path")
-    local create_upload_response
-    create_upload_response=$(set -eu; aws devicefarm create-upload --project-arn="$device_farm_project" --name="$app_filename" --type="$upload_type" --query='upload.[arn, url]' --output=text)
     local app_arn
-    app_arn=$(set -eu; echo $create_upload_response|cut -d' ' -f1)
-    local app_upload_url
-    app_upload_url=$(set -eu; echo $create_upload_response|cut -d' ' -f2)
-    echo_details "Initialized upload of package '$app_filename' for app ARN '$app_arn'"
+    if [[ -n "$app_package_arn" ]]; then
+        # Use existing app package ARN
+        echo_details "Using existing app package ARN: $app_package_arn"
+        app_arn="$app_package_arn"
+    else
+        # Initialize upload for new app package
+        validate_required_variable "app_package_path" "${app_package_path}"
+        echo_details "* app_package_path: $app_package_path"
+        
+        local app_filename
+        app_filename=$(set -eu; basename "$app_package_path")
+        local create_upload_response
+        create_upload_response=$(set -eu; aws devicefarm create-upload --project-arn="$device_farm_project" --name="$app_filename" --type="$upload_type" --query='upload.[arn, url]' --output=text)
+        app_arn=$(set -eu; echo $create_upload_response|cut -d' ' -f1)
+        local app_upload_url
+        app_upload_url=$(set -eu; echo $create_upload_response|cut -d' ' -f2)
+        echo_details "Initialized upload of package '$app_filename' for app ARN '$app_arn'"
 
-    # Perform upload
-    echo_details "Beginning upload"
-    curl -T "$app_package_path" "$app_upload_url"
-    echo_details "Upload finished. Polling for status."
+        # Perform upload
+        echo_details "Beginning upload"
+        curl -T "$app_package_path" "$app_upload_url"
+        echo_details "Upload finished. Polling for status."
 
-    # Poll for successful upload
-    local upload_status
-    upload_status=$(set -eu; get_upload_status "$app_arn")
-    echo_details "Upload status: $upload_status"
-    while [ ! "$upload_status" == 'SUCCEEDED' ]; do
-        if [ "$upload_status" == 'FAILED' ]; then
-            echo_fail 'Upload failed!'
-        fi
-
-        echo_details "Upload not yet processed; waiting. (Status=$upload_status)"
-        sleep 10
+        # Poll for successful upload
+        local upload_status
         upload_status=$(set -eu; get_upload_status "$app_arn")
-    done
-    echo_details 'Upload successful! Starting run...'
+        echo_details "Upload status: $upload_status"
+        while [ ! "$upload_status" == 'SUCCEEDED' ]; do
+            if [ "$upload_status" == 'FAILED' ]; then
+                echo_fail 'Upload failed!'
+            fi
+
+            echo_details "Upload not yet processed; waiting. (Status=$upload_status)"
+            sleep 10
+            upload_status=$(set -eu; get_upload_status "$app_arn")
+        done
+        echo_details 'Upload successful! Starting run...'
+    fi
 
     # Start run
     local run_params=(--project-arn="$device_farm_project")
@@ -294,11 +332,19 @@ function device_farm_run {
 }
 
 function device_farm_run_ios {
-    device_farm_run ios "$ios_pool" "$ipa_path" IOS_APP
+    if [[ -n "$ipa_package_name" ]]; then
+        device_farm_run ios "$ios_pool" "" IOS_APP "$ipa_package_arn"
+    else
+        device_farm_run ios "$ios_pool" "$ipa_path" IOS_APP ""
+    fi
 }
 
 function device_farm_run_android {
-    device_farm_run android "$android_pool" "$apk_path" ANDROID_APP
+    if [[ -n "$apk_name" ]]; then
+        device_farm_run android "$android_pool" "" ANDROID_APP "$apk_package_arn"
+    else
+        device_farm_run android "$android_pool" "$apk_path" ANDROID_APP ""
+    fi
 }
 
 #=======================================
@@ -327,8 +373,10 @@ echo_details "* billing_method: $billing_method"
 echo_details "* locale: $locale"
 echo_details "* platform: $platform"
 echo_details "* ipa_path: $ipa_path"
+echo_details "* ipa_package_name: $ipa_package_name"
 echo_details "* ios_pool: $ios_pool"
 echo_details "* apk_path: $apk_path"
+echo_details "* apk_name: $apk_name"
 echo_details "* android_pool: $android_pool"
 echo_details "* run_name_prefix: $run_name_prefix"
 echo_details "* build_version: $build_version"
@@ -367,17 +415,29 @@ if [ "$platform" == 'ios' ]; then
     validate_ios_inputs
     set -o nounset
     get_test_package_arn
+    if [[ -n "$ipa_package_name" ]]; then
+        get_ipa_package_arn
+    fi
     device_farm_run_ios
 elif [ "$platform" == 'android' ]; then
     validate_android_inputs
     set -o nounset
     get_test_package_arn
+    if [[ -n "$apk_name" ]]; then
+        get_apk_package_arn
+    fi
     device_farm_run_android
 elif [ "$platform" == 'ios+android' ]; then
     validate_ios_inputs
     validate_android_inputs
     set -o nounset
     get_test_package_arn
+    if [[ -n "$ipa_package_name" ]]; then
+        get_ipa_package_arn
+    fi
+    if [[ -n "$apk_name" ]]; then
+        get_apk_package_arn
+    fi
     device_farm_run_ios
     device_farm_run_android
 fi

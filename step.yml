@@ -156,7 +156,17 @@ inputs:
   - ipa_path: "$BITRISE_IPA_PATH"
     opts:
       title: "IPA file path"
-      description: "Required for iOS runs."
+      description: "Required for iOS runs when ipa_package_name is not provided."
+  - ipa_package_name: ""
+    opts:
+      title: "IPA Package Filename"
+      summary: ""
+      description: |-
+          Filename of IPA package to use for testing.
+          This should be a filename (not a path) that matches the name of the IPA bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step.
+          The most recently uploaded package with this name will be used.
+          If provided, this takes precedence over ipa_path.
+      is_required: false
   - ios_pool: ""
     opts:
       title: "Device Farm iOS Device Pool ARN"
@@ -164,7 +174,17 @@ inputs:
   - apk_path: "$BITRISE_SIGNED_APK_PATH"
     opts:
       title: "APK file path"
-      description: "Required for Android runs."
+      description: "Required for Android runs when apk_name is not provided."
+  - apk_name: ""
+    opts:
+      title: "APK Package Filename"
+      summary: ""
+      description: |-
+          Filename of APK package to use for testing.
+          This should be a filename (not a path) that matches the name of the APK bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step.
+          The most recently uploaded package with this name will be used.
+          If provided, this takes precedence over apk_path.
+      is_required: false
   - android_pool: ""
     opts:
       title: "Device Farm Android Device Pool ARN"
