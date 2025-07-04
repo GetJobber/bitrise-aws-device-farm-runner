@@ -87,8 +87,8 @@ function validate_required_input_with_options {
 }
 
 function validate_ios_inputs {
-    if [[ -n "$ipa_package_name" ]]; then
-        validate_required_input "ipa_package_name" "${ipa_package_name}"
+    if [[ -n "$ipa_name" ]]; then
+        validate_required_input "ipa_name" "${ipa_name}"
     else
         validate_required_input "ipa_path" "${ipa_path}"
     fi
@@ -129,10 +129,10 @@ function get_apk_package_arn {
 function get_ipa_package_arn {
     # Get most recent iOS IPA ARN
     set +o errexit
-    validate_required_variable "ipa_package_name" "${ipa_package_name}"
-    ipa_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${ipa_package_name}' && type=='IOS_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
+    validate_required_variable "ipa_name" "${ipa_name}"
+    ipa_package_arn=$(set -eu; set -o pipefail; aws devicefarm list-uploads --arn="$device_farm_project" --query="uploads[?name=='${ipa_name}' && type=='IOS_APP'] | max_by(@, &created).arn" --output=json | jq -r .)
     if [[ "$?" -ne 0 ]]; then
-        echo_fail "Unable to find an iOS IPA package named '${ipa_package_name}' in your device farm project. Please make sure that ipa_package_name corresponds to the basename (not the full path) of the IPA package which should have been previously uploaded by the aws-file-deploy step. If the IPA is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
+        echo_fail "Unable to find an iOS IPA package named '${ipa_name}' in your device farm project. Please make sure that ipa_name corresponds to the basename (not the full path) of the IPA package which should have been previously uploaded by the aws-file-deploy step. If the IPA is too old it may not be found; try re-uploading it. See https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy"
     fi
     set -o errexit
 }
@@ -332,7 +332,7 @@ function device_farm_run {
 }
 
 function device_farm_run_ios {
-    if [[ -n "$ipa_package_name" ]]; then
+    if [[ -n "$ipa_name" ]]; then
         device_farm_run ios "$ios_pool" "" IOS_APP "$ipa_package_arn"
     else
         device_farm_run ios "$ios_pool" "$ipa_path" IOS_APP ""
@@ -373,7 +373,7 @@ echo_details "* billing_method: $billing_method"
 echo_details "* locale: $locale"
 echo_details "* platform: $platform"
 echo_details "* ipa_path: $ipa_path"
-echo_details "* ipa_package_name: $ipa_package_name"
+echo_details "* ipa_name: $ipa_name"
 echo_details "* ios_pool: $ios_pool"
 echo_details "* apk_path: $apk_path"
 echo_details "* apk_name: $apk_name"
@@ -415,7 +415,7 @@ if [ "$platform" == 'ios' ]; then
     validate_ios_inputs
     set -o nounset
     get_test_package_arn
-    if [[ -n "$ipa_package_name" ]]; then
+    if [[ -n "$ipa_name" ]]; then
         get_ipa_package_arn
     fi
     device_farm_run_ios
@@ -432,7 +432,7 @@ elif [ "$platform" == 'ios+android' ]; then
     validate_android_inputs
     set -o nounset
     get_test_package_arn
-    if [[ -n "$ipa_package_name" ]]; then
+    if [[ -n "$ipa_name" ]]; then
         get_ipa_package_arn
     fi
     if [[ -n "$apk_name" ]]; then

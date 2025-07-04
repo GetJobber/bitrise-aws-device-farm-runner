@@ -156,8 +156,8 @@ inputs:
   - ipa_path: "$BITRISE_IPA_PATH"
     opts:
       title: "IPA file path"
-      description: "Required for iOS runs when ipa_package_name is not provided."
-  - ipa_package_name: ""
+      description: "Required for iOS runs when ipa_name is not provided."
+  - ipa_name: ""
     opts:
       title: "IPA Package Filename"
       summary: ""
