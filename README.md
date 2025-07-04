@@ -27,8 +27,8 @@ Deploys app to device farm and starts a test run with a preconfigured test packa
 - `run_fail_on_warning` - Fail if the device farm results return result of WARNED. Depending on your tests, you may or may not wish to fail the step if Device farm returns a WARNED result. Only takes effect if `run_wait_for_results` is also enabled. Default: `true`
 
 ### iOS-specific Inputs
-- `ipa_path` - IPA file path. Required for iOS runs when `ipa_package_name` is not provided. Default: `$BITRISE_IPA_PATH`
-- `ipa_package_name` - Filename of IPA package to use for testing. This should be a filename (not a path) that matches the name of the IPA bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step. The most recently uploaded package with this name will be used. If provided, this takes precedence over `ipa_path`.
+- `ipa_path` - IPA file path. Required for iOS runs when `ipa_name` is not provided. Default: `$BITRISE_IPA_PATH`
+- `ipa_name` - Filename of IPA package to use for testing. This should be a filename (not a path) that matches the name of the IPA bundle previously uploaded with the [aws-device-farm-file-deploy](https://github.com/peartherapeutics/bitrise-aws-device-farm-file-deploy) step. The most recently uploaded package with this name will be used. If provided, this takes precedence over `ipa_path`.
 - `ios_pool` - Device Farm iOS Device Pool ARN. Required for iOS runs. ARNs can be obtained using the AWS CLI `devicefarm list-device-pools` command.
 
 ### Android-specific Inputs
@@ -51,7 +51,7 @@ This step supports two approaches for providing app packages (IPA/APK files):
 - Suitable when you have local files or files generated during the build
 
 ### Package Name Approach (New)
-- Use `ipa_package_name` for iOS apps
+- Use `ipa_name` for iOS apps
 - Use `apk_name` for Android apps
 - The step will look up the most recently uploaded package with the specified name
 - No upload is performed, saving time and bandwidth
@@ -109,7 +109,7 @@ envs:
      1. `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` must be set in `.bitrise.secrets.yml`
      1. An Amazon device farm project must be set up in the target region, and its ARN must be specified in the `device_farm_project` input
      1. If `platform` input is...
-       1. ... set to `ios`, then `ios_pool` must be set to the ARN of an iOS device pool and either `ipa_path` or `ipa_package_name` must be set
+       1. ... set to `ios`, then `ios_pool` must be set to the ARN of an iOS device pool and either `ipa_path` or `ipa_name` must be set
        1. ... set to `android`, then `android_pool` must be set to the ARN of an Android device pool and either `apk_path` or `apk_name` must be set
        1. ... set to `ios+android`, then all of the above inputs must be set
   - see `step.yml` for more info on obtaining ARNs
